@@ -48,14 +48,16 @@
 
 static uint32_t idleThrust = DEFAULT_IDLE_THRUST;
 static float armLength = ARM_LENGTH; // m
-static float thrustToTorque = 0.005964552f;
+static float thrustToTorque = 0.0067f;
 
 // thrust = a * pwm^2 + b * pwm
 //    where PWM is normalized (range 0...1)
 //          thrust is in Newtons (per rotor)
-static float pwmToThrustA = 0.091492681f;
-static float pwmToThrustB = 0.067673604f;
-
+// static float pwmToThrustA = 0.091492681f;
+// static float pwmToThrustB = 0.067673604f;
+static float pwmToThrustA = 0.17252756f;
+static float pwmToThrustB = 0.17427691f;
+static float motorForces[STABILIZER_NR_OF_MOTORS];
 int powerDistributionMotorType(uint32_t id)
 {
   return 1;
@@ -101,28 +103,63 @@ static void powerDistributionLegacy(const control_t *control, motors_thrust_unca
 }
 
 static void powerDistributionForceTorque(const control_t *control, motors_thrust_uncapped_t* motorThrustUncapped) {
-  static float motorForces[STABILIZER_NR_OF_MOTORS];
+  
 
-  const float arm = 0.707106781f * armLength;
+  const float arm = 0.041f; // m
   const float rollPart = 0.25f / arm * control->torqueX;
   const float pitchPart = 0.25f / arm * control->torqueY;
   const float thrustPart = 0.25f * control->thrustSi; // N (per rotor)
   const float yawPart = 0.25f * control->torqueZ / thrustToTorque;
 
-  motorForces[0] = thrustPart - rollPart - pitchPart - yawPart;
-  motorForces[1] = thrustPart - rollPart + pitchPart + yawPart;
-  motorForces[2] = thrustPart + rollPart + pitchPart - yawPart;
-  motorForces[3] = thrustPart + rollPart - pitchPart + yawPart;
+  motorForces[0] = thrustPart - rollPart + pitchPart + yawPart;
+  motorForces[1] = thrustPart - rollPart - pitchPart - yawPart;
+  motorForces[2] = thrustPart + rollPart - pitchPart + yawPart;
+  motorForces[3] = thrustPart + rollPart + pitchPart - yawPart;
+  // motorForces[0] = thrustPart - rollPart - pitchPart - yawPart;
+  // motorForces[1] = thrustPart - rollPart + pitchPart + yawPart;
+  // motorForces[2] = thrustPart + rollPart + pitchPart - yawPart;
+  // motorForces[3] = thrustPart + rollPart - pitchPart + yawPart;
+
+  // float maxForce = motorForces[0];
+  // float minForce = motorForces[0];
+  // for (int motorIndex = 1; motorIndex < STABILIZER_NR_OF_MOTORS; motorIndex++) {
+  //   if (motorForces[motorIndex] > maxForce) {
+  //     maxForce = motorForces[motorIndex];
+  //   }
+  //   if (motorForces[motorIndex] < minForce) {
+  //     minForce = motorForces[motorIndex];
+  //   }
+  // }
+  // if (minForce < 0.0f) {
+  //   for (int motorIndex = 0; motorIndex < STABILIZER_NR_OF_MOTORS; motorIndex++) {
+  //     motorForces[motorIndex] -= minForce;
+  //   }
+  //   maxForce -= minForce;
+  // }
 
   for (int motorIndex = 0; motorIndex < STABILIZER_NR_OF_MOTORS; motorIndex++) {
     float motorForce = motorForces[motorIndex];
     if (motorForce < 0.0f) {
       motorForce = 0.0f;
     }
-
     float motor_pwm = (-pwmToThrustB + sqrtf(pwmToThrustB * pwmToThrustB + 4.0f * pwmToThrustA * motorForce)) / (2.0f * pwmToThrustA);
+    // motor_pwm = -3.95741f*motorForce*motorForce + 4.54896f*motorForce;
     motorThrustUncapped->list[motorIndex] = motor_pwm * UINT16_MAX;
   }
+  // float maxthrust = 77031.0144f;
+  // float maxthrust = 70000.0f;
+  // float offset = 0;
+  // for (int motorIndex = 0; motorIndex < STABILIZER_NR_OF_MOTORS; motorIndex++) {
+  //   if (motorThrustUncapped->list[motorIndex] > maxthrust) {
+  //     offset = fmaxf(offset, motorThrustUncapped->list[motorIndex] - maxthrust);
+  //   }
+  // }
+  // if (offset > 0) {
+  //   for (int motorIndex = 0; motorIndex < STABILIZER_NR_OF_MOTORS; motorIndex++) {
+  //     motorThrustUncapped->list[motorIndex] -= offset;
+  //   }
+  // }
+
 }
 
 static void powerDistributionForce(const control_t *control, motors_thrust_uncapped_t* motorThrustUncapped) {
@@ -193,6 +230,15 @@ float powerDistributionGetMaxThrust() {
   // pwmToThrustA * pwm * pwm + pwmToThrustB * pwm = pwmToThrustA + pwmToThrustB
   return STABILIZER_NR_OF_MOTORS * (pwmToThrustA + pwmToThrustB);
 }
+
+LOG_GROUP_START(powerDist)
+
+LOG_ADD(LOG_FLOAT, m1force, &motorForces[0])
+LOG_ADD(LOG_FLOAT, m2force, &motorForces[1])
+LOG_ADD(LOG_FLOAT, m3force, &motorForces[2])
+LOG_ADD(LOG_FLOAT, m4force, &motorForces[3])
+
+LOG_GROUP_STOP(powerDist)
 
 /**
  * Power distribution parameters

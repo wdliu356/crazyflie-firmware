@@ -133,7 +133,9 @@ void pidReset(PidObject* pid)
   pid->integ        = 0;
   pid->deriv        = 0;
 }
-
+void updateInt(PidObject* pid, const float error){
+  pid->integ = pid->integ + error*pid->dt;
+}
 void pidSetError(PidObject* pid, const float error)
 {
   pid->error = error;

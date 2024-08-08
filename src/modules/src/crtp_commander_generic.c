@@ -35,7 +35,9 @@
 #include "num.h"
 #include "quatcompress.h"
 #include "FreeRTOS.h"
-
+#ifndef M_PI
+  #define M_PI   3.14159265358979323846
+#endif
 /* The generic commander format contains a packet type and data that has to be
  * decoded into a setpoint_t structure. The aim is to make it future-proof
  * by easily allowing the addition of new packets for future use cases.
@@ -71,6 +73,7 @@ enum packet_type {
   hoverType         = 5,
   fullStateType     = 6,
   positionType      = 7,
+  customizedType    = 8,
 };
 
 /* ---===== 2 - Decoding functions =====--- */
@@ -83,9 +86,55 @@ enum packet_type {
  */
 static void stopDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
 {
+  setpoint->mode.z = modeDisable;
   return;
 }
+struct customizedPacket_s {
+  float vx;        // m/s in the world frame of reference
+  float vy;        // ...
+  float vz;        // ...
+  float yawrate;  // deg/s
+  float yaw;      // rad
+  bool groundmode; // true if the Crazyflie is in ground mode
+  bool reset;     // true if PID should be reset
+} __attribute__((packed));
 
+static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
+{
+  const struct customizedPacket_s *values = data;
+
+  ASSERT(datalen == sizeof(struct customizedPacket_s));
+
+  setpoint->mode.x = modeVelocity;
+  setpoint->mode.y = modeVelocity;
+  if (values->groundmode) {
+    setpoint->mode.z = modeGround;
+    // setpoint->position.z = 0.0f;
+  } else {
+    setpoint->mode.z = modeSky;
+    // setpoint->velocity.z = values->vz;
+  }
+  // setpoint->mode.z = modeVelocity;
+
+  setpoint->velocity.x = values->vx;
+  setpoint->velocity.y = values->vy;
+  setpoint->velocity.z = values->vz;
+
+  // setpoint->mode.yaw = modeVelocity;
+
+  setpoint->attitudeRate.yaw = values->yawrate;
+
+  setpoint->mode.roll = modeAbs;
+  setpoint->mode.pitch = modeAbs;
+
+  setpoint->attitude.roll = 0.0f;
+  setpoint->attitude.pitch = 0.0f;
+
+  setpoint->attitude.yaw = values->yaw;
+
+  setpoint->velocity_body = values->reset;
+
+}
 /* velocityDecoder
  * Set the Crazyflie velocity in the world coordinate system
  */
@@ -409,6 +458,7 @@ const static packetDecoder_t packetDecoders[] = {
   [hoverType]         = hoverDecoder,
   [fullStateType]     = fullStateDecoder,
   [positionType]      = positionDecoder,
+  [customizedType]    = customizedDecoder,
 };
 
 /* Decoder switch */

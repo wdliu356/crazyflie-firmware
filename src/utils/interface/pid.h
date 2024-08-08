@@ -109,7 +109,7 @@ float pidUpdate(PidObject* pid, const float measured, const bool updateError);
  * @param[in] angle The new set point
  */
 void pidSetDesired(PidObject* pid, const float desired);
-
+void updateInt(PidObject* pid, float error);
 /**
  * Set a new set point for the PID to track.
  * @return The set point

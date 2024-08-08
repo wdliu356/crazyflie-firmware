@@ -245,7 +245,9 @@ typedef union {
 typedef enum mode_e {
   modeDisable = 0,
   modeAbs,
-  modeVelocity
+  modeVelocity,
+  modeGround,
+  modeSky
 } stab_mode_t;
 
 typedef struct setpoint_s {

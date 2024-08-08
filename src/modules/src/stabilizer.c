@@ -196,7 +196,7 @@ bool stabilizerTest(void)
   pass &= stateEstimatorTest();
   pass &= controllerTest();
   pass &= powerDistributionTest();
-  pass &= motorsTest();
+  pass &= motorsTest();// not a test problem
   pass &= collisionAvoidanceTest();
 
   return pass;
@@ -367,10 +367,12 @@ PARAM_GROUP_START(stabilizer)
  */
 PARAM_ADD_CORE(PARAM_UINT8, estimator, &estimatorType)
 /**
- * @brief Controller type Auto select(0), PID(1), Mellinger(2), INDI(3), Brescianini(4), Lee(5) (Default: 0)
+ * @brief Controller type Auto select(0), PID(1), Mellinger(2), INDI(3), Brescianini(4), Lee(5), Customized(6) (Default: 0)
  */
 PARAM_ADD_CORE(PARAM_UINT8, controller, &controllerType)
 PARAM_GROUP_STOP(stabilizer)
+
+
 
 
 /**
@@ -439,6 +441,8 @@ LOG_ADD_CORE(LOG_FLOAT, pitch, &setpoint.attitude.pitch)
  * @brief Desired attitude rate, yaw rate [deg/s]
  */
 LOG_ADD_CORE(LOG_FLOAT, yaw, &setpoint.attitudeRate.yaw)
+
+LOG_ADD(LOG_INT16, zMode, &setpoint.mode.z)
 LOG_GROUP_STOP(ctrltarget)
 
 /**
@@ -502,6 +506,9 @@ LOG_GROUP_STOP(ctrltargetZ)
  * for the stabilizer module
  */
 LOG_GROUP_START(stabilizer)
+
+LOG_ADD(LOG_UINT8, estimator, &estimatorType)
+
 /**
  * @brief Estimated roll
  *   Note: Same as stateEstimate.roll
@@ -520,7 +527,7 @@ LOG_ADD(LOG_FLOAT, yaw, &state.attitude.yaw)
 /**
  * @brief Current thrust
  */
-LOG_ADD(LOG_FLOAT, thrust, &control.thrust)
+LOG_ADD(LOG_FLOAT, thrust, &control.thrustSi)
 /**
  * @brief Rate of stabilizer loop
  */
@@ -840,4 +847,14 @@ LOG_ADD(LOG_INT32, m3req, &motorThrustBatCompUncapped.motors.m3)
  * and may have values outside the [0 - UINT16_MAX] range.
  */
 LOG_ADD(LOG_INT32, m4req, &motorThrustBatCompUncapped.motors.m4)
+
+LOG_ADD(LOG_INT32, m1, &motorThrustUncapped.motors.m1)
+LOG_ADD(LOG_INT32, m2, &motorThrustUncapped.motors.m2)
+LOG_ADD(LOG_INT32, m3, &motorThrustUncapped.motors.m3)
+LOG_ADD(LOG_INT32, m4, &motorThrustUncapped.motors.m4)
+
+LOG_ADD(LOG_UINT16, m1pwm, &motorPwm.motors.m1)
+LOG_ADD(LOG_UINT16, m2pwm, &motorPwm.motors.m2)
+LOG_ADD(LOG_UINT16, m3pwm, &motorPwm.motors.m3)
+LOG_ADD(LOG_UINT16, m4pwm, &motorPwm.motors.m4)
 LOG_GROUP_STOP(motor)

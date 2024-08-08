@@ -175,30 +175,31 @@ GPIO_InitTypeDef GPIO_PassthroughOutput =
 // Voltage needed with the Supply voltage.
 float motorsCompensateBatteryVoltage(uint32_t id, float iThrust, float supplyVoltage)
 {
-  #ifdef CONFIG_ENABLE_THRUST_BAT_COMPENSATED
-  ASSERT(id < NBR_OF_MOTORS);
+  // #ifdef CONFIG_ENABLE_THRUST_BAT_COMPENSATED
+  // ASSERT(id < NBR_OF_MOTORS);
 
-  if (motorMap[id]->drvType == BRUSHED)
-  {
-    /*
-    * A LiPo battery is supposed to be 4.2V charged, 3.7V mid-charge and 3V
-    * discharged.
-    *
-    * A suitable sanity check for disabling the voltage compensation would be
-    * under 2V. That would suggest a damaged battery. This protects against
-    * rushing the motors on bugs and invalid voltage levels.
-    */
-    if (supplyVoltage < 2.0f)
-    {
-      return iThrust;
-    }
+  // if (motorMap[id]->drvType == BRUSHED)
+  // {
+  //   /*
+  //   * A LiPo battery is supposed to be 4.2V charged, 3.7V mid-charge and 3V
+  //   * discharged.
+  //   *
+  //   * A suitable sanity check for disabling the voltage compensation would be
+  //   * under 2V. That would suggest a damaged battery. This protects against
+  //   * rushing the motors on bugs and invalid voltage levels.
+  //   */
+  //   if (supplyVoltage < 2.0f)
+  //   {
+  //     return iThrust;
+  //   }
 
-    float thrust = (iThrust / 65536.0f) * 60;
-    float volts = -0.0006239f * thrust * thrust + 0.088f * thrust;
-    float ratio = volts / supplyVoltage;
-    return UINT16_MAX * ratio;
-  }
-  #endif
+  //   // float thrust = (iThrust / 65536.0f) * 60;
+  //   float thrust = (iThrust / 65536.0f) * 30;
+  //   float volts = -0.0006239f * thrust * thrust + 0.088f * thrust;
+  //   float ratio = volts / supplyVoltage;
+  //   return UINT16_MAX * ratio;
+  // }
+  // #endif
 
   return iThrust;
 }
@@ -287,11 +288,9 @@ void motorsInit(const MotorPerifDef** motorMapSelect)
     motorMap[i]->ocInit(motorMap[i]->tim, &TIM_OCInitStructure);
     motorMap[i]->preloadConfig(motorMap[i]->tim, TIM_OCPreload_Enable);
   }
-
 #ifdef CONFIG_MOTORS_ESC_PROTOCOL_DSHOT
   motorsDshotDMASetup();
 #endif
-
   // Start the timers
   for (i = 0; i < NBR_OF_MOTORS; i++)
   {

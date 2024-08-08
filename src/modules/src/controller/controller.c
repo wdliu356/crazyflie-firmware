@@ -8,10 +8,11 @@
 #include "controller_indi.h"
 #include "controller_brescianini.h"
 #include "controller_lee.h"
+#include "controller_customized.h"
 
 #include "autoconf.h"
 
-#define DEFAULT_CONTROLLER ControllerTypePID
+#define DEFAULT_CONTROLLER ControllerTypeCustomized
 static ControllerType currentController = ControllerTypeAutoSelect;
 
 static void initController();
@@ -30,6 +31,7 @@ static ControllerFcns controllerFunctions[] = {
   {.init = controllerINDIInit, .test = controllerINDITest, .update = controllerINDI, .name = "INDI"},
   {.init = controllerBrescianiniInit, .test = controllerBrescianiniTest, .update = controllerBrescianini, .name = "Brescianini"},
   {.init = controllerLeeFirmwareInit, .test = controllerLeeFirmwareTest, .update = controllerLeeFirmware, .name = "Lee"},
+  {.init = controllerCustomizedInit, .test = controllerCustomizedTest, .update = controllerCustomized, .name = "Customized"}
   #ifdef CONFIG_CONTROLLER_OOT
   {.init = controllerOutOfTreeInit, .test = controllerOutOfTreeTest, .update = controllerOutOfTree, .name = "OutOfTree"},
   #endif
@@ -57,8 +59,8 @@ void controllerInit(ControllerType controller) {
     #define CONTROLLER ControllerTypeBrescianini
   #elif defined(CONFIG_CONTROLLER_LEE)
     #define CONTROLLER ControllerTypeLee
-  #elif defined(CONFIG_CONTROLLER_OOT)
-    #define CONTROLLER ControllerTypeOot
+  #elif defined(CONFIG_CONTROLLER_CUSTOMIZED)
+    #define CONTROLLER ControllerTypeCustomized
   #else
     #define CONTROLLER ControllerTypeAutoSelect
   #endif
