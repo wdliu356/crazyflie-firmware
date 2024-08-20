@@ -262,7 +262,8 @@ typedef struct setpoint_s {
   acc_t acceleration;       // m/s^2
   jerk_t jerk;              // m/s^3
   bool velocity_body;       // true if velocity is given in body frame; false if velocity is given in world frame
-
+  bool start;               // true if the setpoint should be excuted immediately
+  bool reset;                // true if the pid integrators should be reset
   struct {
     stab_mode_t x;
     stab_mode_t y;

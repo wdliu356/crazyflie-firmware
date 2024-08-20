@@ -11,7 +11,7 @@
 #define ATTITUDE_UPDATE_DT    (float)(1.0f/ATTITUDE_RATE)
 
 static attitude_t attitudeDesired;
-static float actuatorThrust = 0;
+// static float actuatorThrust = 0;
 
 // static float cmd_thrust;
 static float cmd_roll;
@@ -64,7 +64,7 @@ static float yaw_d;
 void controllerCustomizedInit(void)
 {
   attitudeControllerCustomizedInit(ATTITUDE_UPDATE_DT);
-  velocityControllerCustomizedInit();
+  // velocityControllerCustomizedInit();
 }
 
 bool controllerCustomizedTest(void){
@@ -81,32 +81,45 @@ void controllerCustomized(control_t *control, const setpoint_t *setpoint,
                                          const stabilizerStep_t stabilizerStep){
 
   control->controlMode = controlModeForceTorque;
+  // attitudeDesired.yaw = setpoint->attitude.yaw;
+  // velocityControllerCustomized(&actuatorThrust, &attitudeDesired, setpoint, state);
+  // velocityControllerCustomizedGetDesiredAttitude(&roll_d, &pitch_d, &yaw_d);
+  // attitudeDesired.roll = roll_d;
+  // attitudeDesired.pitch = pitch_d;
+  attitudeDesired.roll = setpoint->attitude.roll;
+  attitudeDesired.pitch = setpoint->attitude.pitch;
   attitudeDesired.yaw = setpoint->attitude.yaw;
-  velocityControllerCustomized(&actuatorThrust, &attitudeDesired, setpoint, state);
-  velocityControllerCustomizedGetDesiredAttitude(&roll_d, &pitch_d, &yaw_d);
-  attitudeDesired.roll = roll_d;
-  attitudeDesired.pitch = pitch_d;
-  // attitudeDesired.roll = M_PI/40;
-  // attitudeDesired.pitch = 0.1;
   attitudeControllerCustomized(sensors,&attitudeDesired,setpoint->attitudeRate.yaw,state);
   attitudeControllerCustomizedGetActuatorOutput(&cmd_roll, &cmd_pitch, &cmd_yaw);
-  control->thrustSi = actuatorThrust;
+  control->thrustSi = setpoint->thrust;
+  // control->thrustSi = actuatorThrust;
   // control->thrustSi = 0.005;
   control->torqueX = cmd_roll;
   control->torqueY = cmd_pitch;
   control->torqueZ = cmd_yaw;
-  if (setpoint->mode.z != modeGround && setpoint->mode.z != modeSky){
+  // if (setpoint->mode.z != modeGround && setpoint->mode.z != modeSky){
+  //   control->thrustSi = 0.0;
+  //   control->torqueX = 0.0;
+  //   control->torqueY = 0.0;
+  //   control->torqueZ = 0.0;
+  //   attitudeControllerCustomizedResetAllPID();
+  //   velocityControllerCustomizedResetAllPID();
+  // }
+  // if (setpoint->velocity_body){
+  //   attitudeControllerCustomizedResetAllPID();
+  //   velocityControllerCustomizedResetAllPID();
+  //   // velocityControllerCustomizedResetAllfilters();
+  // }
+  if (!setpoint->start){
     control->thrustSi = 0.0;
     control->torqueX = 0.0;
     control->torqueY = 0.0;
     control->torqueZ = 0.0;
     attitudeControllerCustomizedResetAllPID();
-    velocityControllerCustomizedResetAllPID();
   }
-  if (setpoint->velocity_body){
+  if(setpoint->reset){
     attitudeControllerCustomizedResetAllPID();
     velocityControllerCustomizedResetAllPID();
-    // velocityControllerCustomizedResetAllfilters();
   }
 }
 
