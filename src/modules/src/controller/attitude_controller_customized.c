@@ -117,16 +117,16 @@ void attitudeControllerCustomized(
     float omega_y = -sensors->gyro.y* (float)M_PI / 180.0f;
     float omega_z = -sensors->gyro.z* (float)M_PI / 180.0f;// minus sign because of coordinate system. Might need further modification
     rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ - 0.1f*eulerRollActual);
-    if(rollTorque > 0.01f)
-        rollTorque = 0.01f;
-    if(rollTorque < -0.01f)
-        rollTorque = -0.01f;
+    if(rollTorque > 0.005f)
+        rollTorque = 0.05f;
+    if(rollTorque < -0.005f)
+        rollTorque = -0.005f;
     // rollTorque = 0.0f;
     pitchTorque = armLength*(Iyy/armLength*(pidPitchC.kd*omega_y - omega_x*omega_z*I2) + pidPitchC.kp*pitchError + pidPitchC.ki*pidPitchC.integ);
-    if(pitchTorque > 0.01f)
-        pitchTorque = 0.01f;
-    if(pitchTorque < -0.01f)
-        pitchTorque = -0.01f;
+    if(pitchTorque > 0.005f)
+        pitchTorque = 0.005f;
+    if(pitchTorque < -0.005f)
+        pitchTorque = -0.005f;
     // pitchTorque = 0.0f;
     yawTorque = (Izz*(pidYawC.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ);
     if (yawTorque > 0.003f)
