@@ -34,7 +34,7 @@
 void attitudeControllerCustomizedInit(const float updateDt);
 bool attitudeControllerCustomizedTest();
 void attitudeControllerCustomized(
-       const sensorData_t *sensors,const attitude_t *attitude,const float desired_yaw_rate,const state_t *state);
+       const sensorData_t *sensors,const attitude_t *attitude,const float desired_yaw_rate,const state_t *state, const stab_mode_t mode);
 
 /**
  * Reset controller roll, pitch and yaw PID's.

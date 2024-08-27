@@ -87,10 +87,16 @@ bool attitudeControllerCustomizedTest()
 }
 
 void attitudeControllerCustomized(
-       const sensorData_t *sensors,const attitude_t *attitude,const float desired_yaw_rate,const state_t *state)
+       const sensorData_t *sensors,const attitude_t *attitude,const float desired_yaw_rate,const state_t *state, const stab_mode_t mode)
 {
     if (!isInit)
         return;
+    if (mode == modeGround){
+      Ixx = 0.0000020011f;
+    }
+    else{
+      Ixx = 0.0000020011f + 0.076*0.076*0.0084107*2.0f + 0.0000029976f;
+    }
     float I1 = (Iyy - Izz) / Ixx;
     float I2 = (Izz - Ixx) / Iyy;
     float I3 = (Ixx - Iyy) / Izz;
@@ -116,17 +122,23 @@ void attitudeControllerCustomized(
     float omega_x = sensors->gyro.x* (float)M_PI / 180.0f;
     float omega_y = -sensors->gyro.y* (float)M_PI / 180.0f;
     float omega_z = -sensors->gyro.z* (float)M_PI / 180.0f;// minus sign because of coordinate system. Might need further modification
-    rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ - 0.1f*eulerRollActual);
-    if(rollTorque > 0.01f)
-        rollTorque = 0.01f;
-    if(rollTorque < -0.01f)
-        rollTorque = -0.01f;
+    if (mode == modeGround){
+      rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ - 0.1f*eulerRollActual);
+    }
+    else{
+      rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ);
+    }
+    
+    if(rollTorque > 0.005f)
+        rollTorque = 0.005f;
+    if(rollTorque < -0.005f)
+        rollTorque = -0.005f;
     // rollTorque = 0.0f;
     pitchTorque = armLength*(Iyy/armLength*(pidPitchC.kd*omega_y - omega_x*omega_z*I2) + pidPitchC.kp*pitchError + pidPitchC.ki*pidPitchC.integ);
-    if(pitchTorque > 0.01f)
-        pitchTorque = 0.01f;
-    if(pitchTorque < -0.01f)
-        pitchTorque = -0.01f;
+    if(pitchTorque > 0.005f)
+        pitchTorque = 0.005f;
+    if(pitchTorque < -0.005f)
+        pitchTorque = -0.005f;
     // pitchTorque = 0.0f;
     yawTorque = (Izz*(pidYawC.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ);
     if (yawTorque > 0.003f)
