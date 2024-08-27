@@ -144,6 +144,7 @@ struct customizedPacket_s {
   float thrustd;      // rad
   bool start; // true if the Crazyflie is in ground mode
   bool reset;     // true if PID should be reset
+  bool groundmode; // true if the Crazyflie is in ground mode
 } __attribute__((packed));
 
 static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
@@ -159,6 +160,11 @@ static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *da
   setpoint->thrust = values->thrustd;
   setpoint->start = values->start;
   setpoint->reset = values->reset;
+  if (values->groundmode){
+    setpoint->mode.z = modeGround;
+  } else {
+    setpoint->mode.z = modeSky;
+  }
 }
 /* velocityDecoder
  * Set the Crazyflie velocity in the world coordinate system

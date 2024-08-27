@@ -89,7 +89,7 @@ void controllerCustomized(control_t *control, const setpoint_t *setpoint,
   attitudeDesired.roll = setpoint->attitude.roll;
   attitudeDesired.pitch = setpoint->attitude.pitch;
   attitudeDesired.yaw = setpoint->attitude.yaw;
-  attitudeControllerCustomized(sensors,&attitudeDesired,setpoint->attitudeRate.yaw,state);
+  attitudeControllerCustomized(sensors,&attitudeDesired,setpoint->attitudeRate.yaw,state, setpoint->mode.z);
   attitudeControllerCustomizedGetActuatorOutput(&cmd_roll, &cmd_pitch, &cmd_yaw);
   control->thrustSi = setpoint->thrust;
   // control->thrustSi = actuatorThrust;
