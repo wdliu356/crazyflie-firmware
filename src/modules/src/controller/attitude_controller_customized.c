@@ -91,12 +91,12 @@ void attitudeControllerCustomized(
 {
     if (!isInit)
         return;
-    if (mode == modeGround){
-      Ixx = 0.0000020011f;
-    }
-    else{
-      Ixx = 0.0000020011f + 0.076*0.076*0.0084107*2.0f + 0.0000029976f;
-    }
+    // if (mode == modeGround){
+    //   Ixx = 0.0000020011f;
+    // }
+    // else{
+    //   Ixx = 0.0000020011f + 0.076f*0.076f*0.0084107f*2.0f + 0.0000029976f;
+    // }
     float I1 = (Iyy - Izz) / Ixx;
     float I2 = (Izz - Ixx) / Iyy;
     float I3 = (Ixx - Iyy) / Izz;
@@ -123,7 +123,7 @@ void attitudeControllerCustomized(
     float omega_y = -sensors->gyro.y* (float)M_PI / 180.0f;
     float omega_z = -sensors->gyro.z* (float)M_PI / 180.0f;// minus sign because of coordinate system. Might need further modification
     if (mode == modeGround){
-      rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ - 0.1f*eulerRollActual);
+      rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ);// - 0.1f*eulerRollActual);
     }
     else{
       rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ);
