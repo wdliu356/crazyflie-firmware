@@ -110,6 +110,12 @@ void attitudeControllerCustomized(
     float rollError = eulerRollDesired - eulerRollActual;
     float pitchError = eulerPitchDesired - eulerPitchActual;
     float yawError = eulerYawDesired - eulerYawActual;
+    if (yawError > (float)M_PI){
+      yawError -= 2.0f*(float)M_PI;
+    }
+    else if (yawError < -(float)M_PI){
+      yawError += 2.0f*(float)M_PI;
+    }
     updateInt(&pidRollC, rollError);
     updateInt(&pidPitchC, pitchError);
     updateInt(&pidYawC, yawError);
