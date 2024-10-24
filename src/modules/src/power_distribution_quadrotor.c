@@ -48,15 +48,21 @@
 
 static uint32_t idleThrust = DEFAULT_IDLE_THRUST;
 static float armLength = ARM_LENGTH; // m
-static float thrustToTorque = 0.0067f;
+// static float thrustToTorque = 0.0067f; // for small quad
+static float thrustToTorque = 0.01012f;
 
 // thrust = a * pwm^2 + b * pwm
 //    where PWM is normalized (range 0...1)
 //          thrust is in Newtons (per rotor)
+// original values
 // static float pwmToThrustA = 0.091492681f;
 // static float pwmToThrustB = 0.067673604f;
-static float pwmToThrustA = 0.17252756f;
-static float pwmToThrustB = 0.17427691f;
+// For small quadrotor
+// static float pwmToThrustA = 0.17252756f;
+// static float pwmToThrustB = 0.17427691f;
+// For big quadrotor
+static float pwmToThrustA = 10.77145f;
+static float pwmToThrustB = -0.2457562f;
 static float motorForces[STABILIZER_NR_OF_MOTORS];
 int powerDistributionMotorType(uint32_t id)
 {
@@ -105,9 +111,9 @@ static void powerDistributionLegacy(const control_t *control, motors_thrust_unca
 static void powerDistributionForceTorque(const control_t *control, motors_thrust_uncapped_t* motorThrustUncapped) {
   
 
-  const float arm = 0.041f; // m
-  const float rollPart = 0.25f / arm * control->torqueX;
-  const float pitchPart = 0.25f / arm * control->torqueY;
+  // const float arm = 0.041f; // m
+  const float rollPart = 0.25f / 0.058f * control->torqueX;
+  const float pitchPart = 0.25f / 0.055f* control->torqueY;
   const float thrustPart = 0.25f * control->thrustSi; // N (per rotor)
   const float yawPart = 0.25f * control->torqueZ / thrustToTorque;
 

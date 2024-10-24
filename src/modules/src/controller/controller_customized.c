@@ -14,9 +14,9 @@ static attitude_t attitudeDesired;
 // static float actuatorThrust = 0;
 
 // static float cmd_thrust;
-static float cmd_roll;
-static float cmd_pitch;
-static float cmd_yaw;
+static float cmd_roll=0.0;
+static float cmd_pitch=0.0;
+static float cmd_yaw=0.0;
 static float roll_d;
 static float pitch_d;
 static float yaw_d;

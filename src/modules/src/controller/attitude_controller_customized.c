@@ -21,10 +21,25 @@ static float attFiltCutoff = ATTITUDE_LPF_CUTOFF_FREQ;
 // static float omzFiltCutoff = ATTITUDE_YAW_RATE_LPF_CUTOFF_FREQ;
 // static float yawMaxDelta = YAW_MAX_DELTA;
 // static float mass = 0.0864f;
-static float Ixx = 0.0000020011f;
-static float Iyy = 0.0000069007f;
-static float Izz = 0.001064235f;
-static float armLength = 0.041;
+
+// float Ixx = 0.0000020011f;
+// float Iyy = 0.0000069007f;
+// float Izz = 0.001064235f;
+// float armLength = 0.041;
+// float k_roll_p = 1.0f;
+// float k_roll_d = 1.0f;
+// float k_roll_i = 1.0f;
+// float k_pitch_p = 1.0f;
+// float k_pitch_d = 1.0f;
+// float k_pitch_i = 1.0f;
+// float k_yaw_p = 1.0f;
+// float k_yaw_d = 1.0f;
+// float k_yaw_i = 1.0f;
+
+float Ixx;
+float Iyy;
+float Izz;
+float armLength;
 // static inline int16_t saturateSignedInt16(float in)
 // {
 //   // don't use INT16_MIN, because later we may negate it, which won't work for that value.
@@ -57,9 +72,30 @@ PidObject pidYawC = {
   .kff = PID_YAW_KFF,
 };
 
-static float rollTorque;
-static float pitchTorque;
-static float yawTorque;
+PidObject pidRollC_f = {
+  .kp = 0.35,
+  .ki = 0.4,
+  .kd = -400,
+  .kff = PID_ROLL_KFF,
+};
+
+PidObject pidPitchC_f = {
+  .kp = 0.5,
+  .ki = 0.2,
+  .kd = -250,
+  .kff = PID_PITCH_KFF,
+};
+
+PidObject pidYawC_f = {
+  .kp = 0.4,
+  .ki = 0.1,
+  .kd = -2,
+  .kff = PID_YAW_KFF,
+};
+
+static float rollTorque=0.0;
+static float pitchTorque=0.0;
+static float yawTorque=0.0;
 
 static bool isInit;
 
@@ -76,6 +112,12 @@ void attitudeControllerCustomizedInit(const float updateDt)
   pidInit(&pidPitchC, 0, pidPitchC.kp, pidPitchC.ki, pidPitchC.kd, pidPitchC.kff, updateDt,
       ATTITUDE_RATE, attFiltCutoff, attFiltEnable);
   pidInit(&pidYawC,   0, pidYawC.kp,   pidYawC.ki,   pidYawC.kd,   pidYawC.kff,   updateDt,
+      ATTITUDE_RATE, attFiltCutoff, attFiltEnable);
+  pidInit(&pidRollC_f,  0, pidRollC_f.kp,  pidRollC_f.ki,  pidRollC_f.kd,  pidRollC_f.kff,  updateDt,
+      ATTITUDE_RATE, attFiltCutoff, attFiltEnable);
+  pidInit(&pidPitchC_f, 0, pidPitchC_f.kp, pidPitchC_f.ki, pidPitchC_f.kd, pidPitchC_f.kff, updateDt,
+      ATTITUDE_RATE, attFiltCutoff, attFiltEnable);
+  pidInit(&pidYawC_f,   0, pidYawC_f.kp,   pidYawC_f.ki,   pidYawC_f.kd,   pidYawC_f.kff,   updateDt,
       ATTITUDE_RATE, attFiltCutoff, attFiltEnable);
 
   isInit = true;
@@ -119,6 +161,9 @@ void attitudeControllerCustomized(
     updateInt(&pidRollC, rollError);
     updateInt(&pidPitchC, pitchError);
     updateInt(&pidYawC, yawError);
+    updateInt(&pidRollC_f, rollError);
+    updateInt(&pidPitchC_f, pitchError);
+    updateInt(&pidYawC_f, yawError);
     // pidRollC.integ += rollError*pidRollC.dt;
     // pidPitchC.integ += pitchError*pidPitchC.dt;
     // pidRollC.integ = pidRollC.integ > 1.0f ? 1.0f : pidRollC.integ;
@@ -129,28 +174,31 @@ void attitudeControllerCustomized(
     float omega_y = -sensors->gyro.y* (float)M_PI / 180.0f;
     float omega_z = -sensors->gyro.z* (float)M_PI / 180.0f;// minus sign because of coordinate system. Might need further modification
     if (mode == modeGround){
-      rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ);// - 0.1f*eulerRollActual);
+      rollTorque = (Ixx*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ);// - 0.1f*eulerRollActual);
+      pitchTorque = (Iyy*(pidPitchC.kd*omega_y - omega_x*omega_z*I2) + pidPitchC.kp*pitchError + pidPitchC.ki*pidPitchC.integ);
+      yawTorque = (Izz*(pidYawC.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ);
     }
-    else{
-      rollTorque = armLength*(Ixx/armLength*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ);
+    else
+    {
+      rollTorque = (Ixx*(pidRollC_f.kd*omega_x - omega_y*omega_z*I1) + pidRollC_f.kp*rollError + pidRollC_f.ki*pidRollC_f.integ);// - 0.1f*eulerRollActual);
+      pitchTorque = (Iyy*(pidPitchC_f.kd*omega_y - omega_x*omega_z*I2) + pidPitchC_f.kp*pitchError + pidPitchC_f.ki*pidPitchC_f.integ);
+      yawTorque = (Izz*(pidYawC_f.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC_f.kp*yawError + pidYawC_f.ki*pidYawC_f.integ);
     }
-    
-    if(rollTorque > 0.005f)
-        rollTorque = 0.005f;
-    if(rollTorque < -0.005f)
-        rollTorque = -0.005f;
+    // rollTorque = (Ixx*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ);
+    if(rollTorque > 0.2f)
+        rollTorque = 0.2f;
+    if(rollTorque < -0.2f)
+        rollTorque = -0.2f;
     // rollTorque = 0.0f;
-    pitchTorque = armLength*(Iyy/armLength*(pidPitchC.kd*omega_y - omega_x*omega_z*I2) + pidPitchC.kp*pitchError + pidPitchC.ki*pidPitchC.integ);
-    if(pitchTorque > 0.005f)
-        pitchTorque = 0.005f;
-    if(pitchTorque < -0.005f)
-        pitchTorque = -0.005f;
+    if(pitchTorque > 0.2f)
+        pitchTorque = 0.2f;
+    if(pitchTorque < -0.2f)
+        pitchTorque = -0.2f;
     // pitchTorque = 0.0f;
-    yawTorque = (Izz*(pidYawC.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ);
-    if (yawTorque > 0.003f)
-        yawTorque = 0.003f;
-    if (yawTorque < -0.003f)
-        yawTorque = -0.003f;
+    if (yawTorque > 0.1f)
+        yawTorque = 0.1f;
+    if (yawTorque < -0.1f)
+        yawTorque = -0.1f;
     // yawTorque = 0.0f;
 }
 
@@ -236,6 +284,54 @@ PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, Ixx, &Ixx)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, Iyy, &Iyy)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, Izz, &Izz)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, armLength, &armLength)
+/**
+ * @brief Proportional gain for the PID roll controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, roll_kp_f, &pidRollC_f.kp)
+/**
+ * @brief Integral gain for the PID roll controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, roll_ki_f, &pidRollC_f.ki)
+/**
+ * @brief Derivative gain for the PID roll controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, roll_kd_f, &pidRollC_f.kd)
+/**
+ * @brief Feedforward gain for the PID roll controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, roll_kff_f, &pidRollC_f.kff)
+/**
+ * @brief Proportional gain for the PID pitch controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, pitch_kp_f, &pidPitchC_f.kp)
+/**
+ * @brief Integral gain for the PID pitch controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, pitch_ki_f, &pidPitchC_f.ki)
+/**
+ * @brief Derivative gain for the PID pitch controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, pitch_kd_f, &pidPitchC_f.kd)
+/**
+ * @brief Feedforward gain for the PID pitch controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, pitch_kff_f, &pidPitchC_f.kff)
+/**
+ * @brief Proportional gain for the PID yaw controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, yaw_kp_f, &pidYawC_f.kp)
+/**
+ * @brief Integral gain for the PID yaw controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, yaw_ki_f, &pidYawC_f.ki)
+/**
+ * @brief Derivative gain for the PID yaw controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, yaw_kd_f, &pidYawC_f.kd)
+/**
+ * @brief Feedforward gain for the PID yaw controller
+ */
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, yaw_kff_f, &pidYawC_f.kff)
 
 PARAM_GROUP_STOP(customizedPid)
 
