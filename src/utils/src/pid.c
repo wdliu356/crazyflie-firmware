@@ -142,6 +142,10 @@ void pidReset(PidObject* pid)
 }
 void updateInt(PidObject* pid, const float error){
   pid->integ = pid->integ + error*pid->dt;
+  if(pid->iLimit != 0)
+  {
+    pid->integ = constrain(pid->integ, -pid->iLimit, pid->iLimit);
+  }
 }
 void pidSetError(PidObject* pid, const float error)
 {

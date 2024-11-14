@@ -202,15 +202,15 @@ bool stabilizerTest(void)
   return pass;
 }
 
-static void batteryCompensation(const motors_thrust_uncapped_t* motorThrustUncapped, motors_thrust_uncapped_t* motorThrustBatCompUncapped)
-{
-  float supplyVoltage = pmGetBatteryVoltage();
+// static void batteryCompensation(const motors_thrust_uncapped_t* motorThrustUncapped, motors_thrust_uncapped_t* motorThrustBatCompUncapped)
+// {
+//   float supplyVoltage = pmGetBatteryVoltage();
 
-  for (int motor = 0; motor < STABILIZER_NR_OF_MOTORS; motor++)
-  {
-    motorThrustBatCompUncapped->list[motor] = motorsCompensateBatteryVoltage(motor, motorThrustUncapped->list[motor], supplyVoltage);
-  }
-}
+//   for (int motor = 0; motor < STABILIZER_NR_OF_MOTORS; motor++)
+//   {
+//     motorThrustBatCompUncapped->list[motor] = motorsCompensateBatteryVoltage(motor, motorThrustUncapped->list[motor], supplyVoltage);
+//   }
+// }
 
 static void setMotorRatios(const motors_thrust_pwm_t* motorPwm)
 {
@@ -248,9 +248,11 @@ static void logCapWarning(const bool isCapped) {
 
 static void controlMotors(const control_t* control) {
   powerDistribution(control, &motorThrustUncapped);
-  batteryCompensation(&motorThrustUncapped, &motorThrustBatCompUncapped);
-  const bool isCapped = powerDistributionCap(&motorThrustBatCompUncapped, &motorPwm);
+  // batteryCompensation(&motorThrustUncapped, &motorThrustBatCompUncapped);
+  // const bool isCapped = powerDistributionCap(&motorThrustBatCompUncapped, &motorPwm);
+  const bool isCapped = powerDistributionCap(&motorThrustUncapped, &motorPwm);
   logCapWarning(isCapped);
+  // powerDistribution(control, &motorPwm);
   setMotorRatios(&motorPwm);
 }
 
@@ -320,6 +322,7 @@ static void stabilizerTask(void* param)
 
       // Critical for safety, be careful if you modify this code!
       // The supervisor will already set thrust to 0 in the setpoint if needed, but to be extra sure prevent motors from running.
+      // controlMotors(&control);
       if (areMotorsAllowedToRun) {
         controlMotors(&control);
       } else {
@@ -442,7 +445,7 @@ LOG_ADD_CORE(LOG_FLOAT, pitch, &setpoint.attitude.pitch)
  */
 LOG_ADD_CORE(LOG_FLOAT, yaw, &setpoint.attitudeRate.yaw)
 
-LOG_ADD(LOG_INT16, zMode, &setpoint.mode.z)
+// LOG_ADD(LOG_INT16, zMode, &setpoint.mode.z)
 LOG_GROUP_STOP(ctrltarget)
 
 /**
@@ -848,10 +851,10 @@ LOG_ADD(LOG_INT32, m3req, &motorThrustBatCompUncapped.motors.m3)
  */
 LOG_ADD(LOG_INT32, m4req, &motorThrustBatCompUncapped.motors.m4)
 
-LOG_ADD(LOG_INT32, m1, &motorThrustUncapped.motors.m1)
-LOG_ADD(LOG_INT32, m2, &motorThrustUncapped.motors.m2)
-LOG_ADD(LOG_INT32, m3, &motorThrustUncapped.motors.m3)
-LOG_ADD(LOG_INT32, m4, &motorThrustUncapped.motors.m4)
+// LOG_ADD(LOG_INT32, m1, &motorThrustUncapped.motors.m1)
+// LOG_ADD(LOG_INT32, m2, &motorThrustUncapped.motors.m2)
+// LOG_ADD(LOG_INT32, m3, &motorThrustUncapped.motors.m3)
+// LOG_ADD(LOG_INT32, m4, &motorThrustUncapped.motors.m4)
 
 LOG_ADD(LOG_UINT16, m1pwm, &motorPwm.motors.m1)
 LOG_ADD(LOG_UINT16, m2pwm, &motorPwm.motors.m2)

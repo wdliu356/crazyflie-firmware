@@ -40,6 +40,15 @@ float Ixx;
 float Iyy;
 float Izz;
 float armLength;
+float eulerRollDesired;//* (float)M_PI / 180.0f;
+float eulerPitchDesired;//* (float)M_PI / 180.0f;
+float eulerYawDesired;//* (float)M_PI / 180.0f;
+float eulerRollActual;
+float eulerPitchActual;
+float eulerYawActual;
+float rollError;
+float pitchError;
+float yawError;
 // static inline int16_t saturateSignedInt16(float in)
 // {
 //   // don't use INT16_MIN, because later we may negate it, which won't work for that value.
@@ -80,9 +89,9 @@ PidObject pidRollC_f = {
 };
 
 PidObject pidPitchC_f = {
-  .kp = 0.5,
+  .kp = 2.0,
   .ki = 0.2,
-  .kd = -250,
+  .kd = -25,
   .kff = PID_PITCH_KFF,
 };
 
@@ -129,15 +138,15 @@ bool attitudeControllerCustomizedTest()
 }
 
 void attitudeControllerCustomized(
-       const sensorData_t *sensors,const attitude_t *attitude,const float desired_yaw_rate,const state_t *state, const stab_mode_t mode)
+       const sensorData_t *sensors,const attitude_t *attitude,const float desired_yaw_rate,const state_t *state, const stab_mode_t mode, const bool locmode)
 {
     if (!isInit)
         return;
     // if (mode == modeGround){
-    //   Ixx = 0.0000020011f;
+    //   Ixx = 0.000064631f;
     // }
     // else{
-    //   Ixx = 0.0000020011f + 0.076f*0.076f*0.0084107f*2.0f + 0.0000029976f;
+    //   Ixx = 0.00289f;
     // }
     float I1 = (Iyy - Izz) / Ixx;
     float I2 = (Izz - Ixx) / Iyy;
@@ -158,28 +167,46 @@ void attitudeControllerCustomized(
     else if (yawError < -(float)M_PI){
       yawError += 2.0f*(float)M_PI;
     }
-    updateInt(&pidRollC, rollError);
-    updateInt(&pidPitchC, pitchError);
-    updateInt(&pidYawC, yawError);
-    updateInt(&pidRollC_f, rollError);
-    updateInt(&pidPitchC_f, pitchError);
-    updateInt(&pidYawC_f, yawError);
     // pidRollC.integ += rollError*pidRollC.dt;
     // pidPitchC.integ += pitchError*pidPitchC.dt;
     // pidRollC.integ = pidRollC.integ > 1.0f ? 1.0f : pidRollC.integ;
     // pidRollC.integ = pidRollC.integ < -1.0f ? -1.0f : pidRollC.integ;
     // pidPitchC.integ = pidPitchC.integ > 1.0f ? 1.0f : pidPitchC.integ;
     // pidPitchC.integ = pidPitchC.integ < -1.0f ? -1.0f : pidPitchC.integ;
+
     float omega_x = sensors->gyro.x* (float)M_PI / 180.0f;
     float omega_y = -sensors->gyro.y* (float)M_PI / 180.0f;
     float omega_z = -sensors->gyro.z* (float)M_PI / 180.0f;// minus sign because of coordinate system. Might need further modification
     if (mode == modeGround){
-      rollTorque = (Ixx*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ);// - 0.1f*eulerRollActual);
+      updateInt(&pidRollC, rollError);
+      updateInt(&pidPitchC, pitchError);
+      updateInt(&pidYawC, yawError);
+      if (locmode){
+        rollTorque = 0.0;
+        yawTorque = 0.0;
+        pidYawC.integ = 0.0;
+        pidRollC.integ = 0.0;
+        pidPitchC.integ = 0.0;
+      }
+      else{
+        if (eulerRollActual>=0){
+          rollTorque = (Ixx*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ - 1.0f*eulerRollActual*eulerRollActual);
+        }
+        else{
+          rollTorque = (Ixx*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ + 1.0f*eulerRollActual*eulerRollActual);
+        }
+        // rollTorque = (Ixx*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ - 0.1f*eulerRollActual);
+        yawTorque = (Izz*(pidYawC.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ);
+      }
+      // rollTorque = (Ixx*(pidRollC.kd*omega_x - omega_y*omega_z*I1) + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ - 0.1f*eulerRollActual);
       pitchTorque = (Iyy*(pidPitchC.kd*omega_y - omega_x*omega_z*I2) + pidPitchC.kp*pitchError + pidPitchC.ki*pidPitchC.integ);
-      yawTorque = (Izz*(pidYawC.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ);
+      // yawTorque = (Izz*(pidYawC.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ);
     }
     else
     {
+      updateInt(&pidRollC_f, rollError);
+      updateInt(&pidPitchC_f, pitchError);
+      updateInt(&pidYawC_f, yawError);
       rollTorque = (Ixx*(pidRollC_f.kd*omega_x - omega_y*omega_z*I1) + pidRollC_f.kp*rollError + pidRollC_f.ki*pidRollC_f.integ);// - 0.1f*eulerRollActual);
       pitchTorque = (Iyy*(pidPitchC_f.kd*omega_y - omega_x*omega_z*I2) + pidPitchC_f.kp*pitchError + pidPitchC_f.ki*pidPitchC_f.integ);
       yawTorque = (Izz*(pidYawC_f.kd*(omega_z - desired_yaw_rate) - omega_x*omega_y*I3) + pidYawC_f.kp*yawError + pidYawC_f.ki*pidYawC_f.integ);
@@ -195,10 +222,10 @@ void attitudeControllerCustomized(
     if(pitchTorque < -0.2f)
         pitchTorque = -0.2f;
     // pitchTorque = 0.0f;
-    if (yawTorque > 0.1f)
-        yawTorque = 0.1f;
-    if (yawTorque < -0.1f)
-        yawTorque = -0.1f;
+    if (yawTorque > 0.05f)
+        yawTorque = 0.05f;
+    if (yawTorque < -0.05f)
+        yawTorque = -0.05f;
     // yawTorque = 0.0f;
 }
 
@@ -334,4 +361,12 @@ PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, yaw_kd_f, &pidYawC_f.kd)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, yaw_kff_f, &pidYawC_f.kff)
 
 PARAM_GROUP_STOP(customizedPid)
+
+// LOG_GROUP_START(controlTarget)
+// LOG_ADD(LOG_FLOAT, rollError, &rollError)
+// LOG_ADD(LOG_FLOAT, pitchError, &pitchError)
+// LOG_ADD(LOG_FLOAT, yawError, &yawError)
+// LOG_ADD(LOG_FLOAT, eulerRollDesired, &eulerRollDesired)
+// LOG_ADD(LOG_FLOAT, eulerPitchDesired, &eulerPitchDesired)
+// LOG_GROUP_STOP(controlTarget)
 

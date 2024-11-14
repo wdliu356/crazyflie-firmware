@@ -1,7 +1,7 @@
 #include "stabilizer_types.h"
 
 #include "attitude_controller_customized.h"
-#include "velocity_controller_customized.h"
+// #include "velocity_controller_customized.h"
 #include "controller_customized.h"
 
 #include "log.h"
@@ -17,9 +17,11 @@ static attitude_t attitudeDesired;
 static float cmd_roll=0.0;
 static float cmd_pitch=0.0;
 static float cmd_yaw=0.0;
-static float roll_d;
-static float pitch_d;
-static float yaw_d;
+static float roll_d=0.0;
+static float pitch_d=0.0;
+static float yaw_d=0.0;
+bool start = false;
+bool forcestop = false;
 // static float mass = 0.0864f;
 // static float Ixx = 0.0000020011f;
 // static float Iyy = 0.0000069007f;
@@ -86,10 +88,13 @@ void controllerCustomized(control_t *control, const setpoint_t *setpoint,
   // velocityControllerCustomizedGetDesiredAttitude(&roll_d, &pitch_d, &yaw_d);
   // attitudeDesired.roll = roll_d;
   // attitudeDesired.pitch = pitch_d;
+  roll_d = setpoint->attitude.roll;
+  pitch_d = setpoint->attitude.pitch;
+  yaw_d = setpoint->attitude.yaw;
   attitudeDesired.roll = setpoint->attitude.roll;
   attitudeDesired.pitch = setpoint->attitude.pitch;
   attitudeDesired.yaw = setpoint->attitude.yaw;
-  attitudeControllerCustomized(sensors,&attitudeDesired,setpoint->attitudeRate.yaw,state, setpoint->mode.z);
+  attitudeControllerCustomized(sensors,&attitudeDesired,setpoint->attitudeRate.yaw,state, setpoint->mode.z, setpoint->locmode);
   attitudeControllerCustomizedGetActuatorOutput(&cmd_roll, &cmd_pitch, &cmd_yaw);
   control->thrustSi = setpoint->thrust;
   // control->thrustSi = actuatorThrust;
@@ -110,7 +115,13 @@ void controllerCustomized(control_t *control, const setpoint_t *setpoint,
   //   velocityControllerCustomizedResetAllPID();
   //   // velocityControllerCustomizedResetAllfilters();
   // }
-  if (!setpoint->start){
+  if (setpoint->start){
+    start = true;
+  }
+  if (setpoint->forcestop){
+    forcestop = true;
+  }
+  if ((!start) || forcestop){
     control->thrustSi = 0.0;
     control->torqueX = 0.0;
     control->torqueY = 0.0;
@@ -119,7 +130,7 @@ void controllerCustomized(control_t *control, const setpoint_t *setpoint,
   }
   if(setpoint->reset){
     attitudeControllerCustomizedResetAllPID();
-    velocityControllerCustomizedResetAllPID();
+    // velocityControllerCustomizedResetAllPID();
   }
 }
 

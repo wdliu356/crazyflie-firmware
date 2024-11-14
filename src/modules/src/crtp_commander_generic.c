@@ -35,6 +35,7 @@
 #include "num.h"
 #include "quatcompress.h"
 #include "FreeRTOS.h"
+#include "servo.h"
 #ifndef M_PI
   #define M_PI   3.14159265358979323846
 #endif
@@ -145,6 +146,8 @@ struct customizedPacket_s {
   bool start; // true if the Crazyflie is in ground mode
   bool reset;     // true if PID should be reset
   bool groundmode; // true if the Crazyflie is in ground mode
+  bool forcestop; // true if the Crazyflie is forced to stop
+  bool locmode; // true if the Crazyflie is in local mode
 } __attribute__((packed));
 
 static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
@@ -160,10 +163,14 @@ static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *da
   setpoint->thrust = values->thrustd;
   setpoint->start = values->start;
   setpoint->reset = values->reset;
+  setpoint->forcestop = values->forcestop;
+  setpoint->locmode = values->locmode;
   if (values->groundmode){
     setpoint->mode.z = modeGround;
+    servoSetAngle(90);
   } else {
     setpoint->mode.z = modeSky;
+    servoSetAngle(180);
   }
 }
 /* velocityDecoder

@@ -205,7 +205,7 @@ static bool isFlyingCheck(SupervisorMem_t* this, const uint32_t tick) {
 static bool isTumbledCheck(SupervisorMem_t* this, const sensorData_t *data, const uint32_t tick) {
   const float freeFallThreshold = 0.1;
 
-  const float acceptedTiltAccZ = 0.5;  // 60 degrees tilt (when stationary)
+  const float acceptedTiltAccZ = 0.5;  // 60 degrees tilt (when stationary) 0.5 for reference
   const uint32_t maxTiltTime = M2T(1000);
 
   const float acceptedUpsideDownAccZ = -0.2;

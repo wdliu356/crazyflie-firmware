@@ -242,218 +242,218 @@ void velocityControllerCustomizedResetAllfilters() {
   filterReset(&thisC.pidVZ.pid, POSITION_RATE, velZFiltCutoff, velZFiltEnable);
 }
 
-/**
- * Log variables of the PID position controller
- *
- * Note: rename to posCtrlPID ?
- */
-LOG_GROUP_START(customizedCtl)
+// /**
+//  * Log variables of the PID position controller
+//  *
+//  * Note: rename to posCtrlPID ?
+//  */
+// LOG_GROUP_START(customizedCtl)
 
-/**
- * @brief PID controller target desired body-yaw-aligned velocity x [m/s]
- *
- * Note: Same as stabilizer log
- */
+// /**
+//  * @brief PID controller target desired body-yaw-aligned velocity x [m/s]
+//  *
+//  * Note: Same as stabilizer log
+//  */
 
-LOG_ADD(LOG_FLOAT, targetVX, &thisC.pidVX.pid.desired)
-/**
- * @brief PID controller target desired body-yaw-aligned velocity y [m/s]
- *
- * Note: Same as stabilizer log
- */
-LOG_ADD(LOG_FLOAT, targetVY, &thisC.pidVY.pid.desired)
-/**
- * @brief PID controller target desired velocity z [m/s]
- *
- * Note: Same as stabilizer log
- */
-LOG_ADD(LOG_FLOAT, targetVZ, &thisC.pidVZ.pid.desired)
-/**
- * @brief PID controller target desired body-yaw-aligned position x [m]
- *
- * Note: Same as stabilizer log
- */
+// LOG_ADD(LOG_FLOAT, targetVX, &thisC.pidVX.pid.desired)
+// /**
+//  * @brief PID controller target desired body-yaw-aligned velocity y [m/s]
+//  *
+//  * Note: Same as stabilizer log
+//  */
+// LOG_ADD(LOG_FLOAT, targetVY, &thisC.pidVY.pid.desired)
+// /**
+//  * @brief PID controller target desired velocity z [m/s]
+//  *
+//  * Note: Same as stabilizer log
+//  */
+// LOG_ADD(LOG_FLOAT, targetVZ, &thisC.pidVZ.pid.desired)
+// /**
+//  * @brief PID controller target desired body-yaw-aligned position x [m]
+//  *
+//  * Note: Same as stabilizer log
+//  */
 
-LOG_ADD(LOG_FLOAT, bodyVX, &state_body_vx)
-/**
- * @brief PID state body-yaw-aligned velocity y [m/s]
- *
- */
-LOG_ADD(LOG_FLOAT, bodyVY, &state_body_vy)
-/**
- * @brief PID state body-yaw-aligned position x [m]
- *
- */
-LOG_ADD(LOG_FLOAT, bodyX, &state_body_x)
-/**
- * @brief PID state body-yaw-aligned position y [m]
- *
- */
-LOG_ADD(LOG_FLOAT, bodyY, &state_body_y)
+// LOG_ADD(LOG_FLOAT, bodyVX, &state_body_vx)
+// /**
+//  * @brief PID state body-yaw-aligned velocity y [m/s]
+//  *
+//  */
+// LOG_ADD(LOG_FLOAT, bodyVY, &state_body_vy)
+// /**
+//  * @brief PID state body-yaw-aligned position x [m]
+//  *
+//  */
+// LOG_ADD(LOG_FLOAT, bodyX, &state_body_x)
+// /**
+//  * @brief PID state body-yaw-aligned position y [m]
+//  *
+//  */
+// LOG_ADD(LOG_FLOAT, bodyY, &state_body_y)
 
-/**
- * @brief PID proportional output position x
- */
-LOG_ADD(LOG_FLOAT, VXp, &thisC.pidVX.pid.outP)
-/**
- * @brief PID integral output velocity x
- */
-LOG_ADD(LOG_FLOAT, VXi, &thisC.pidVX.pid.outI)
-/**
- * @brief PID derivative output velocity x
- */
-LOG_ADD(LOG_FLOAT, VXd, &thisC.pidVX.pid.outD)
-/**
- * @brief PID feedforward output velocity x
- */
-LOG_ADD(LOG_FLOAT, VXff, &thisC.pidVX.pid.outFF)
+// /**
+//  * @brief PID proportional output position x
+//  */
+// LOG_ADD(LOG_FLOAT, VXp, &thisC.pidVX.pid.outP)
+// /**
+//  * @brief PID integral output velocity x
+//  */
+// LOG_ADD(LOG_FLOAT, VXi, &thisC.pidVX.pid.outI)
+// /**
+//  * @brief PID derivative output velocity x
+//  */
+// LOG_ADD(LOG_FLOAT, VXd, &thisC.pidVX.pid.outD)
+// /**
+//  * @brief PID feedforward output velocity x
+//  */
+// LOG_ADD(LOG_FLOAT, VXff, &thisC.pidVX.pid.outFF)
 
-/**
- * @brief PID proportional output velocity y
- */
-LOG_ADD(LOG_FLOAT, VYp, &thisC.pidVY.pid.outP)
-/**
- * @brief PID integral output velocity y
- */
-LOG_ADD(LOG_FLOAT, VYi, &thisC.pidVY.pid.outI)
-/**
- * @brief PID derivative output velocity y
- */
-LOG_ADD(LOG_FLOAT, VYd, &thisC.pidVY.pid.outD)
-/**
- * @brief PID feedforward output velocity y
- */
-LOG_ADD(LOG_FLOAT, VYff, &thisC.pidVY.pid.outFF)
+// /**
+//  * @brief PID proportional output velocity y
+//  */
+// LOG_ADD(LOG_FLOAT, VYp, &thisC.pidVY.pid.outP)
+// /**
+//  * @brief PID integral output velocity y
+//  */
+// LOG_ADD(LOG_FLOAT, VYi, &thisC.pidVY.pid.outI)
+// /**
+//  * @brief PID derivative output velocity y
+//  */
+// LOG_ADD(LOG_FLOAT, VYd, &thisC.pidVY.pid.outD)
+// /**
+//  * @brief PID feedforward output velocity y
+//  */
+// LOG_ADD(LOG_FLOAT, VYff, &thisC.pidVY.pid.outFF)
 
-/**
- * @brief PID proportional output velocity z
- */
-LOG_ADD(LOG_FLOAT, VZp, &thisC.pidVZ.pid.outP)
-/**
- * @brief PID integral output velocity z
- */
-LOG_ADD(LOG_FLOAT, VZi, &thisC.pidVZ.pid.outI)
-/**
- * @brief PID integral output velocity z
- */
-LOG_ADD(LOG_FLOAT, VZd, &thisC.pidVZ.pid.outD)
-/**
- * @brief PID feedforward output velocity z
- */
-LOG_ADD(LOG_FLOAT, VZff, &thisC.pidVZ.pid.outFF)
-
-
-// LOG_ADD(LOG_FLOAT, rollD, &roll_d)
-// LOG_ADD(LOG_FLOAT, pitchD, &pitch_d)
-// LOG_ADD(LOG_FLOAT, yawD, &yaw_d)
-LOG_ADD(LOG_FLOAT, thrust, &thrustRaw)
-LOG_ADD(LOG_FLOAT, mass, &mass)
-LOG_ADD(LOG_FLOAT, g, &g)
-LOG_ADD(LOG_FLOAT, zFactor, &zFactor)
+// /**
+//  * @brief PID proportional output velocity z
+//  */
+// LOG_ADD(LOG_FLOAT, VZp, &thisC.pidVZ.pid.outP)
+// /**
+//  * @brief PID integral output velocity z
+//  */
+// LOG_ADD(LOG_FLOAT, VZi, &thisC.pidVZ.pid.outI)
+// /**
+//  * @brief PID integral output velocity z
+//  */
+// LOG_ADD(LOG_FLOAT, VZd, &thisC.pidVZ.pid.outD)
+// /**
+//  * @brief PID feedforward output velocity z
+//  */
+// LOG_ADD(LOG_FLOAT, VZff, &thisC.pidVZ.pid.outFF)
 
 
-LOG_GROUP_STOP(customizedCtl)
-
-/**
- * Tuning settings for the gains of the PID
- * controller for the velocity of the Crazyflie ¨
- * in the body-yaw-aligned X & Y and global Z directions.
- */
-PARAM_GROUP_START(customizedPid)
-/**
- * @brief Proportional gain for the velocity PID in the body-yaw-aligned X direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vxKp, &thisC.pidVX.pid.kp)
-/**
- * @brief Integral gain for the velocity PID in the body-yaw-aligned X direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vxKi, &thisC.pidVX.pid.ki)
-/**
- * @brief Derivative gain for the velocity PID in the body-yaw-aligned X direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vxKd, &thisC.pidVX.pid.kd)
-/**
- * @brief Feedforward gain for the velocity PID in the body-yaw-aligned X direction (in degrees per m/s)
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vxKFF, &thisC.pidVX.pid.kff)
-
-/**
- * @brief Proportional gain for the velocity PID in the body-yaw-aligned Y direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vyKp, &thisC.pidVY.pid.kp)
-/**
- * @brief Integral gain for the velocity PID in the body-yaw-aligned Y direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vyKi, &thisC.pidVY.pid.ki)
-/**
- * @brief Derivative gain for the velocity PID in the body-yaw-aligned Y direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vyKd, &thisC.pidVY.pid.kd)
-/**
- * @brief Feedforward gain for the velocity PID in the body-yaw-aligned Y direction (in degrees per m/s)
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vyKFF, &thisC.pidVY.pid.kff)
-
-/**
- * @brief Proportional gain for the velocity PID in the global Z direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vzKp, &thisC.pidVZ.pid.kp)
-/**
- * @brief Integral gain for the velocity PID in the global Z direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vzKi, &thisC.pidVZ.pid.ki)
-/**
- * @brief Derivative gain for the velocity PID in the global Z direction
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vzKd, &thisC.pidVZ.pid.kd)
-/**
- * @brief Feedforward gain for the velocity PID in the global direction (in degrees per m/s)
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vzKFF, &thisC.pidVZ.pid.kff)
-
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, zFactor, &zFactor)
-
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, mass, &mass)
+// // LOG_ADD(LOG_FLOAT, rollD, &roll_d)
+// // LOG_ADD(LOG_FLOAT, pitchD, &pitch_d)
+// // LOG_ADD(LOG_FLOAT, yawD, &yaw_d)
+// LOG_ADD(LOG_FLOAT, thrust, &thrustRaw)
+// LOG_ADD(LOG_FLOAT, mass, &mass)
+// LOG_ADD(LOG_FLOAT, g, &g)
+// LOG_ADD(LOG_FLOAT, zFactor, &zFactor)
 
 
-PARAM_GROUP_STOP(customizedPid)
+// LOG_GROUP_STOP(customizedCtl)
 
-/**
- * Tuning settings for the gains of the PID
- * controller for the position of the Crazyflie ¨
- * in the body-yaw-aligned X & Y and global Z directions.
- */
-PARAM_GROUP_START(posCtlPid)
-/**
- * @brief Proportional gain for the position PID in the body-yaw-aligned X direction
- */
-PARAM_ADD(PARAM_UINT16 | PARAM_PERSISTENT, thrustBase, &thisC.thrustBase)
-/**
- * @brief Min. thrust value to output
- */
-PARAM_ADD(PARAM_UINT16 | PARAM_PERSISTENT, thrustMin, &thisC.thrustMin)
+// /**
+//  * Tuning settings for the gains of the PID
+//  * controller for the velocity of the Crazyflie ¨
+//  * in the body-yaw-aligned X & Y and global Z directions.
+//  */
+// PARAM_GROUP_START(customizedPid)
+// /**
+//  * @brief Proportional gain for the velocity PID in the body-yaw-aligned X direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vxKp, &thisC.pidVX.pid.kp)
+// /**
+//  * @brief Integral gain for the velocity PID in the body-yaw-aligned X direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vxKi, &thisC.pidVX.pid.ki)
+// /**
+//  * @brief Derivative gain for the velocity PID in the body-yaw-aligned X direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vxKd, &thisC.pidVX.pid.kd)
+// /**
+//  * @brief Feedforward gain for the velocity PID in the body-yaw-aligned X direction (in degrees per m/s)
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vxKFF, &thisC.pidVX.pid.kff)
 
-/**
- * @brief Roll absolute limit
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, rLimit,  &rLimit)
-/**
- * @brief Pitch absolute limit
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, pLimit,  &pLimit)
-/**
- * @brief Maximum body-yaw-aligned X velocity
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, xVelMax, &xVelMax)
-/**
- * @brief Maximum body-yaw-aligned Y velocity
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, yVelMax, &yVelMax)
-/**
- * @brief Maximum Z Velocity
- */
-PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, zVelMax,  &zVelMax)
+// /**
+//  * @brief Proportional gain for the velocity PID in the body-yaw-aligned Y direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vyKp, &thisC.pidVY.pid.kp)
+// /**
+//  * @brief Integral gain for the velocity PID in the body-yaw-aligned Y direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vyKi, &thisC.pidVY.pid.ki)
+// /**
+//  * @brief Derivative gain for the velocity PID in the body-yaw-aligned Y direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vyKd, &thisC.pidVY.pid.kd)
+// /**
+//  * @brief Feedforward gain for the velocity PID in the body-yaw-aligned Y direction (in degrees per m/s)
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vyKFF, &thisC.pidVY.pid.kff)
 
-PARAM_GROUP_STOP(posCtlPid)
+// /**
+//  * @brief Proportional gain for the velocity PID in the global Z direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vzKp, &thisC.pidVZ.pid.kp)
+// /**
+//  * @brief Integral gain for the velocity PID in the global Z direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vzKi, &thisC.pidVZ.pid.ki)
+// /**
+//  * @brief Derivative gain for the velocity PID in the global Z direction
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vzKd, &thisC.pidVZ.pid.kd)
+// /**
+//  * @brief Feedforward gain for the velocity PID in the global direction (in degrees per m/s)
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, vzKFF, &thisC.pidVZ.pid.kff)
+
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, zFactor, &zFactor)
+
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, mass, &mass)
+
+
+// PARAM_GROUP_STOP(customizedPid)
+
+// /**
+//  * Tuning settings for the gains of the PID
+//  * controller for the position of the Crazyflie ¨
+//  * in the body-yaw-aligned X & Y and global Z directions.
+//  */
+// PARAM_GROUP_START(posCtlPid)
+// /**
+//  * @brief Proportional gain for the position PID in the body-yaw-aligned X direction
+//  */
+// PARAM_ADD(PARAM_UINT16 | PARAM_PERSISTENT, thrustBase, &thisC.thrustBase)
+// /**
+//  * @brief Min. thrust value to output
+//  */
+// PARAM_ADD(PARAM_UINT16 | PARAM_PERSISTENT, thrustMin, &thisC.thrustMin)
+
+// /**
+//  * @brief Roll absolute limit
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, rLimit,  &rLimit)
+// /**
+//  * @brief Pitch absolute limit
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, pLimit,  &pLimit)
+// /**
+//  * @brief Maximum body-yaw-aligned X velocity
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, xVelMax, &xVelMax)
+// /**
+//  * @brief Maximum body-yaw-aligned Y velocity
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, yVelMax, &yVelMax)
+// /**
+//  * @brief Maximum Z Velocity
+//  */
+// PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, zVelMax,  &zVelMax)
+
+// PARAM_GROUP_STOP(posCtlPid)
 
 
