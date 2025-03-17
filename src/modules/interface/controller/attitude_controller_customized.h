@@ -34,7 +34,7 @@
 void attitudeControllerCustomizedInit(const float updateDt);
 bool attitudeControllerCustomizedTest();
 void attitudeControllerCustomized(
-       const sensorData_t *sensors,const attitude_t *attitude,const float desired_yaw_rate,const state_t *state, const stab_mode_t mode, const bool locmode);
+       const sensorData_t *sensors,const attitude_t *attitude,const float desired_yaw_rate,const state_t *state, const stab_mode_t mode, const bool locmode, const float frameroll, const float yaw_fb);
 
 /**
  * Reset controller roll, pitch and yaw PID's.
@@ -45,6 +45,8 @@ void attitudeControllerCustomizedResetAllPID();
  * Get the actuator output.
  */
 void attitudeControllerCustomizedGetActuatorOutput(float* roll, float* pitch, float* yaw);
+
+void attitudeControllerCustomizedGetPIDOutput(float* roll, float* pitch, float* yaw);
 
 
 #endif /* ATTITUDE_CONTROLLER_CUSTOMIZED_H_ */

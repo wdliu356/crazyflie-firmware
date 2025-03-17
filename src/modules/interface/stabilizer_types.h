@@ -263,9 +263,17 @@ typedef struct setpoint_s {
   jerk_t jerk;              // m/s^3
   bool velocity_body;       // true if velocity is given in body frame; false if velocity is given in world frame
   bool start;               // true if the setpoint should be excuted immediately
-  bool reset;                // true if the pid integrators should be reset
+  // bool reset;                // true if the pid integrators should be reset
   bool forcestop;           // true if the Crazyflie should be forced to stop
   bool locmode;             // true if the Crazyflie is in local mode
+  bool torqueMode;          // true if the Crazyflie is in torque mode
+  bool testMode;
+  float torqueroll;         // Nm
+  float torquepitch;        // Nm
+  float torqueyaw;          // Nm
+  bool torqueControlMode;   // true if the Crazyflie is in torque control mode
+  float frameroll;          // rad
+  float yaw_fb;             // rad
   struct {
     stab_mode_t x;
     stab_mode_t y;

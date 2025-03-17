@@ -35,7 +35,7 @@
 #include "num.h"
 #include "quatcompress.h"
 #include "FreeRTOS.h"
-#include "servo.h"
+// #include "servo.h"
 #ifndef M_PI
   #define M_PI   3.14159265358979323846
 #endif
@@ -75,6 +75,9 @@ enum packet_type {
   fullStateType     = 6,
   positionType      = 7,
   customizedType    = 8,
+  torqueType        = 9,
+  testType          = 10,
+  torqueControlType = 11,
 };
 
 /* ---===== 2 - Decoding functions =====--- */
@@ -137,17 +140,91 @@ static void stopDecoder(setpoint_t *setpoint, uint8_t type, const void *data, si
 
 // }
 
+
+struct torqueControlPacket_s {
+  float roll_torque;
+  bool start;
+  float thrustd;
+  float pitch_torque;
+  float yaw_torque;
+}__attribute__((packed));
+static void torqueControlDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
+{
+  const struct torqueControlPacket_s *values = data;
+
+  ASSERT(datalen == sizeof(struct torqueControlPacket_s));
+
+  setpoint->torqueroll = values->roll_torque;
+  setpoint->torquepitch = values->pitch_torque;
+  setpoint->torqueyaw = values->yaw_torque;
+  setpoint->thrust = values->thrustd;
+  setpoint->start = values->start;
+  setpoint->torqueControlMode = true;
+  
+}
+
+struct torquePacket_s{
+  float roll_torque;
+  bool start;
+  bool force_stop;
+  float thrustd;
+}__attribute__((packed));
+
+static void torqueDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
+{
+  const struct torquePacket_s *values = data;
+
+  ASSERT(datalen == sizeof(struct torquePacket_s));
+
+  setpoint->torqueroll = values->roll_torque;
+  setpoint->torqueMode = true;
+  setpoint->thrust = values->thrustd;
+  setpoint->start = values->start;
+  setpoint->forcestop = values->force_stop;
+}
+
+struct testPacket_s{
+  float roll;
+  float pitch;
+  float yaw;
+  float rollrate;
+  float pitchrate;
+  float yawrate;
+  bool start;
+}__attribute__((packed));
+
+static void testDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
+{
+  const struct testPacket_s *values = data;
+
+  ASSERT(datalen == sizeof(struct testPacket_s));
+
+  setpoint->attitude.roll = values->roll;
+  setpoint->attitude.pitch = values->pitch;
+  setpoint->attitude.yaw = values->yaw;
+  setpoint->attitudeRate.roll = values->rollrate;
+  setpoint->attitudeRate.pitch = values->pitchrate;
+  setpoint->attitudeRate.yaw = values->yawrate;
+  setpoint->start = values->start;
+  setpoint->testMode = true;
+  setpoint->mode.z = modeGround;
+  setpoint->locmode = false;
+  setpoint->torqueMode = false;
+}
+
 struct customizedPacket_s {
   float rolld;        // m/s in the world frame of reference
   float pitchd;        // ...
   float yawd;        // ...
-  float yawrated;  // deg/s
+  // float yawrated;  // deg/s
   float thrustd;      // rad
   bool start; // true if the Crazyflie is in ground mode
-  bool reset;     // true if PID should be reset
+  // bool reset;     // true if PID should be reset
   bool groundmode; // true if the Crazyflie is in ground mode
-  bool forcestop; // true if the Crazyflie is forced to stop
+  // bool forcestop; // true if the Crazyflie is forced to stop
   bool locmode; // true if the Crazyflie is in local mode
+  float frame_roll; // rad, the roll angle of the frame
+  float yaw_fb; // rad, the yaw angle of the frame
 } __attribute__((packed));
 
 static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
@@ -159,19 +236,29 @@ static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *da
   setpoint->attitude.roll = values->rolld;
   setpoint->attitude.pitch = values->pitchd;
   setpoint->attitude.yaw = values->yawd;
-  setpoint->attitudeRate.yaw = values->yawrated;
+  // setpoint->attitudeRate.yaw = values->yawrated;
   setpoint->thrust = values->thrustd;
   setpoint->start = values->start;
-  setpoint->reset = values->reset;
-  setpoint->forcestop = values->forcestop;
+  // setpoint->reset = values->reset;
+  // setpoint->forcestop = values->forcestop;
   setpoint->locmode = values->locmode;
+  setpoint->frameroll = values->frame_roll;
+  setpoint->yaw_fb = values->yaw_fb;
   if (values->groundmode){
     setpoint->mode.z = modeGround;
-    servoSetAngle(90);
   } else {
     setpoint->mode.z = modeSky;
-    servoSetAngle(180);
   }
+  setpoint->torqueMode = false;
+  setpoint->torqueControlMode = false;
+  setpoint->testMode = false;
+  // if (values->groundmode){
+  //   setpoint->mode.z = modeGround;
+  //   servoSetAngle(90);
+  // } else {
+  //   setpoint->mode.z = modeSky;
+  //   servoSetAngle(180);
+  // }
 }
 /* velocityDecoder
  * Set the Crazyflie velocity in the world coordinate system
@@ -497,6 +584,9 @@ const static packetDecoder_t packetDecoders[] = {
   [fullStateType]     = fullStateDecoder,
   [positionType]      = positionDecoder,
   [customizedType]    = customizedDecoder,
+  [torqueType]        = torqueDecoder,
+  [testType]          = testDecoder,
+  [torqueControlType] = torqueControlDecoder,
 };
 
 /* Decoder switch */

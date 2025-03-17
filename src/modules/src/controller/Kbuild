@@ -8,4 +8,5 @@ obj-y += position_controller_indi.o
 obj-y += position_controller_pid.o
 obj-y += controller_lee.o
 obj-y += controller_customized.o
-obj-y += attitude_controller_customized.o
+# obj-y += attitude_controller_customized.o
+obj-y += attitude_controller_customized_new.o

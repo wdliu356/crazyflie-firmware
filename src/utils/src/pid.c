@@ -44,7 +44,7 @@ void pidInit(PidObject* pid, const float desired, const float kp,
   pid->ki            = ki;
   pid->kd            = kd;
   pid->kff           = kff;
-  pid->iLimit        = DEFAULT_PID_INTEGRATION_LIMIT;
+  pid->iLimit        = 10.0;
   pid->outputLimit   = DEFAULT_PID_OUTPUT_LIMIT;
   pid->dt            = dt;
   pid->enableDFilter = enableDFilter;

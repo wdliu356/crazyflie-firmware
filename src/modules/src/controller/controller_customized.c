@@ -1,6 +1,6 @@
 #include "stabilizer_types.h"
 
-#include "attitude_controller_customized.h"
+#include "attitude_controller_customized_new.h"
 // #include "velocity_controller_customized.h"
 #include "controller_customized.h"
 
@@ -10,7 +10,7 @@
 
 #define ATTITUDE_UPDATE_DT    (float)(1.0f/ATTITUDE_RATE)
 
-static attitude_t attitudeDesired;
+// static attitude_t attitudeDesired;
 // static float actuatorThrust = 0;
 
 // static float cmd_thrust;
@@ -20,8 +20,12 @@ static float cmd_yaw=0.0;
 static float roll_d=0.0;
 static float pitch_d=0.0;
 static float yaw_d=0.0;
+static float PIDroll = 0.0;
+static float PIDpitch = 0.0;
+static float PIDyaw = 0.0;
 bool start = false;
 bool forcestop = false;
+static float roll_torque_recieved = 0.0;
 // static float mass = 0.0864f;
 // static float Ixx = 0.0000020011f;
 // static float Iyy = 0.0000069007f;
@@ -65,14 +69,14 @@ bool forcestop = false;
 
 void controllerCustomizedInit(void)
 {
-  attitudeControllerCustomizedInit(ATTITUDE_UPDATE_DT);
+  attitudeControllerCustomizedNewInit(ATTITUDE_UPDATE_DT);
   // velocityControllerCustomizedInit();
 }
 
 bool controllerCustomizedTest(void){
   bool pass = true;
 
-  pass &= attitudeControllerCustomizedTest();
+  pass &= attitudeControllerCustomizedNewTest();
 
   return pass;
 }
@@ -82,26 +86,53 @@ void controllerCustomized(control_t *control, const setpoint_t *setpoint,
                                          const state_t *state,
                                          const stabilizerStep_t stabilizerStep){
 
-  control->controlMode = controlModeForceTorque;
-  // attitudeDesired.yaw = setpoint->attitude.yaw;
-  // velocityControllerCustomized(&actuatorThrust, &attitudeDesired, setpoint, state);
-  // velocityControllerCustomizedGetDesiredAttitude(&roll_d, &pitch_d, &yaw_d);
-  // attitudeDesired.roll = roll_d;
-  // attitudeDesired.pitch = pitch_d;
-  roll_d = setpoint->attitude.roll;
-  pitch_d = setpoint->attitude.pitch;
-  yaw_d = setpoint->attitude.yaw;
-  attitudeDesired.roll = setpoint->attitude.roll;
-  attitudeDesired.pitch = setpoint->attitude.pitch;
-  attitudeDesired.yaw = setpoint->attitude.yaw;
-  attitudeControllerCustomized(sensors,&attitudeDesired,setpoint->attitudeRate.yaw,state, setpoint->mode.z, setpoint->locmode);
-  attitudeControllerCustomizedGetActuatorOutput(&cmd_roll, &cmd_pitch, &cmd_yaw);
-  control->thrustSi = setpoint->thrust;
-  // control->thrustSi = actuatorThrust;
-  // control->thrustSi = 0.005;
-  control->torqueX = cmd_roll;
-  control->torqueY = cmd_pitch;
-  control->torqueZ = cmd_yaw;
+  
+
+  if (setpoint->torqueMode){
+    control->controlMode = controlModeForceTorque;
+    roll_torque_recieved = setpoint->torqueroll;
+    control->thrustSi = setpoint->thrust;
+    control->torqueX = setpoint->torqueroll;
+    control->torqueY = 0.0;
+    control->torqueZ = 0.0;
+  }
+  else if (setpoint->torqueControlMode)
+  {
+    /* code */
+    control->controlMode = controlModeForceTorque;
+    control->thrustSi = setpoint->thrust;
+    control->torqueX = setpoint->torqueroll;
+    control->torqueY = setpoint->torquepitch;
+    control->torqueZ = setpoint->torqueyaw;
+  }
+  
+  else{
+    control->controlMode = controlModeForceTorque;
+    // attitudeDesired.yaw = setpoint->attitude.yaw;
+    // velocityControllerCustomized(&actuatorThrust, &attitudeDesired, setpoint, state);
+    // velocityControllerCustomizedGetDesiredAttitude(&roll_d, &pitch_d, &yaw_d);
+    // attitudeDesired.roll = roll_d;
+    // attitudeDesired.pitch = pitch_d;
+    roll_d = setpoint->attitude.roll;
+    pitch_d = setpoint->attitude.pitch;
+    yaw_d = setpoint->attitude.yaw;
+    // attitudeDesired.roll = setpoint->attitude.roll;
+    // attitudeDesired.pitch = setpoint->attitude.pitch;
+    // attitudeDesired.yaw = setpoint->attitude.yaw;
+    // attitudeControllerCustomized(sensors,&attitudeDesired,0.0,state, setpoint->mode.z, setpoint->locmode, setpoint->frameroll,setpoint->yaw_fb);
+    attitudeControllerCustomizedNew(sensors,state,setpoint);
+    attitudeControllerCustomizedNewGetActuatorOutput(&cmd_roll, &cmd_pitch, &cmd_yaw);
+    attitudeControllerCustomizedNewGetPIDOutput(&PIDroll, &PIDpitch, &PIDyaw);
+    control->thrustSi = setpoint->thrust;
+    if (setpoint->testMode){
+      control->thrustSi = 1.0;
+    }
+    // control->thrustSi = actuatorThrust;
+    // control->thrustSi = 0.005;
+    control->torqueX = cmd_roll;
+    control->torqueY = cmd_pitch;
+    control->torqueZ = cmd_yaw;
+  }
   // if (setpoint->mode.z != modeGround && setpoint->mode.z != modeSky){
   //   control->thrustSi = 0.0;
   //   control->torqueX = 0.0;
@@ -118,20 +149,23 @@ void controllerCustomized(control_t *control, const setpoint_t *setpoint,
   if (setpoint->start){
     start = true;
   }
-  if (setpoint->forcestop){
-    forcestop = true;
+  else{
+    start = false;
   }
-  if ((!start) || forcestop){
+  // if (setpoint->forcestop){
+  //   forcestop = true;
+  // }
+  if ((!start)){
     control->thrustSi = 0.0;
     control->torqueX = 0.0;
     control->torqueY = 0.0;
     control->torqueZ = 0.0;
-    attitudeControllerCustomizedResetAllPID();
+    attitudeControllerCustomizedNewResetAllPID();
   }
-  if(setpoint->reset){
-    attitudeControllerCustomizedResetAllPID();
-    // velocityControllerCustomizedResetAllPID();
-  }
+  // if(setpoint->reset){
+  //   attitudeControllerCustomizedResetAllPID();
+  //   // velocityControllerCustomizedResetAllPID();
+  // }
 }
 
 LOG_GROUP_START(customizedCtl)
@@ -140,9 +174,13 @@ LOG_GROUP_START(customizedCtl)
 LOG_ADD(LOG_FLOAT, rollTorque, &cmd_roll)
 LOG_ADD(LOG_FLOAT, pitchTorque, &cmd_pitch)
 LOG_ADD(LOG_FLOAT, yawTorque, &cmd_yaw)
-LOG_ADD(LOG_FLOAT, rollD, &roll_d)
+LOG_ADD(LOG_FLOAT, rollD, &roll_torque_recieved)
 LOG_ADD(LOG_FLOAT, pitchD, &pitch_d)
 LOG_ADD(LOG_FLOAT, yawD, &yaw_d)
+LOG_ADD(LOG_FLOAT, rollPID, &PIDroll)
+LOG_ADD(LOG_FLOAT, pitchPID, &PIDpitch)
+LOG_ADD(LOG_FLOAT, yawPID, &PIDyaw)
+// LOG_ADD(LOG_FLOAT, rollTorqueRecieved, &roll_torque_recieved)
 // LOG_ADD(LOG_FLOAT, thrust, &actuatorThrust)
 
 LOG_GROUP_STOP(customizedCtl)

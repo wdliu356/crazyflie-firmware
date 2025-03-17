@@ -17,9 +17,7 @@
 #include "quatcompress.h"
 
 #define DEFAULT_ESTIMATOR StateEstimatorTypeComplementary
-static StateEstimatorType currentEstimator = StateEstimatorTypeAutoSelect;
-
-
+static StateEstimatorType currentEstimator = StateEstimatorTypeComplementary;
 #define MEASUREMENTS_QUEUE_SIZE (20)
 static xQueueHandle measurementsQueue;
 STATIC_MEM_QUEUE_ALLOC(measurementsQueue, MEASUREMENTS_QUEUE_SIZE, sizeof(measurement_t));
