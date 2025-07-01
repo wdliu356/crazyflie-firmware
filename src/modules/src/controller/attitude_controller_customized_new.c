@@ -9,6 +9,7 @@
 #include "commander.h"
 #include "platform_defaults.h"
 #include "math.h"
+#include <stdlib.h>
 
 #ifndef M_PI
   #define M_PI   3.14159265358979323846
@@ -50,12 +51,14 @@ float rollError;
 float pitchError;
 float yawError;
 float spring;
+float Ixx_frame;
 float Iyy_frame;
 float Izz_frame;
 float angle_diff;
 float omega_x;
 float omega_y;
 float omega_z;
+float yaw_rate_desired;
 // static inline int16_t saturateSignedInt16(float in)
 // {
 //   // don't use INT16_MIN, because later we may negate it, which won't work for that value.
@@ -187,6 +190,7 @@ void attitudeControllerCustomizedNew(
       float eulerYawDesired = setpoint->attitude.yaw;//* (float)M_PI / 180.0f;
       float eulerRollActual = state->attitude.roll* (float)M_PI / 180.0f;
       float eulerPitchActual = -state->attitude.pitch* (float)M_PI / 180.0f;
+      yaw_rate_desired = setpoint->attitudeRate.yaw;
       // float eulerYawActual = state->attitude.yaw * (float)M_PI / 180.0f;
       rollError = eulerRollDesired - eulerRollActual;
       pitchError = eulerPitchDesired - eulerPitchActual;
@@ -223,15 +227,18 @@ void attitudeControllerCustomizedNew(
     if (omega_y < (float)-1.){
       omega_y = (float)-1.;
     }
-    if (omega_z > (float)1.){
-      omega_z = (float)1.;
+    if (omega_z > (float)0.5){
+      omega_z = (float)0.5;
     }
-    if (omega_z < (float)-1.){
-      omega_z = (float)-1.;
+    if (omega_z < (float)-0.5){
+      omega_z = (float)-0.5;
     }
     
 
     float I_new00 = Ixx;
+    if (setpoint->mode.z == modeSky){
+      I_new00 += Ixx_frame;
+    }
 
     float I_new11 = Iyy + Iyy_frame*(float)(cos(angle_diff)*cos(angle_diff))+Izz_frame*(float)(sin(angle_diff)*sin(angle_diff));
     float I_new12 = -Iyy_frame*(float)(cos(angle_diff)*sin(angle_diff))+Izz_frame*(float)(sin(angle_diff)*cos(angle_diff));
@@ -246,10 +253,10 @@ void attitudeControllerCustomizedNew(
     updateInt(&pidPitchC_f, pitchError);
     updateInt(&pidYawC_f, yawError);
     
-    if (setpoint->mode.z == modeGround){
+    if (setpoint->mode.z == modeGround || setpoint->mode.z == modeLoco){
       omega_dot_x = -pidRollC.kd*omega_x + pidRollC.kp*rollError + pidRollC.ki*pidRollC.integ;
       omega_dot_y = -pidPitchC.kd*omega_y + pidPitchC.kp*pitchError + pidPitchC.ki*pidPitchC.integ;
-      omega_dot_z = -pidYawC.kd*(omega_z - (float)0.0) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ; 
+      omega_dot_z = -pidYawC.kd*(omega_z - yaw_rate_desired) + pidYawC.kp*yawError + pidYawC.ki*pidYawC.integ; 
       // I_new12 = 0;
       // I_new21 = 0;
 
@@ -258,26 +265,32 @@ void attitudeControllerCustomizedNew(
     {
       omega_dot_x = -pidRollC_f.kd*omega_x + pidRollC_f.kp*rollError + pidRollC_f.ki*pidRollC_f.integ;
       omega_dot_y = -pidPitchC_f.kd*omega_y + pidPitchC_f.kp*pitchError + pidPitchC_f.ki*pidPitchC_f.integ;
-      omega_dot_z = -pidYawC_f.kd*(omega_z - (float)0.0) + pidYawC_f.kp*yawError + pidYawC_f.ki*pidYawC_f.integ;
+      omega_dot_z = -pidYawC_f.kd*(omega_z - yaw_rate_desired) + pidYawC_f.kp*yawError + pidYawC_f.ki*pidYawC_f.integ;
     }
 
-    if (setpoint->locmode){
+    if (setpoint->mode.z == modeLoco){
       rollTorque = 0.0;
-      // yawTorque = 0.0;
+      yawTorque = 0.0;
       pidYawC.integ = 0.0;
       pidRollC.integ = 0.0;
-      pidPitchC.integ = 0.0;
+      // pidPitchC.integ = 0.0;
+      omega_dot_y+=pitchError*(float)600.0+1000*pidPitchC.integ-80*omega_y;
     }
     else{
       rollTorque = I_new00*omega_dot_x + omega_y*(I_new22*omega_z+I_new21*omega_y) - omega_z*(I_new11*omega_y+I_new12*omega_z);//-spring*angle_diff;
-      // if (angle_diff > (float)0.1 || angle_diff < (float)-0.1){
-      //   rollTorque = rollTorque - spring*angle_diff; 
-      // }
-      
+      if (setpoint->mode.z == modeGround){
+        if (angle_diff > (float)0.03){
+          rollTorque = rollTorque - spring*(angle_diff-(float)0.03); 
+        }
+        else if (angle_diff < (float)-0.03){
+          rollTorque = rollTorque - spring*(angle_diff+(float)0.03); 
+        }
+      }      
+      yawTorque = I_new22*omega_dot_z + I_new21*omega_dot_y + omega_x*(I_new11*omega_y+I_new12*omega_z) - omega_y*(I_new00*omega_x);
     }
     // rollTorque = 0.0;
     pitchTorque = (I_new11*omega_dot_y + I_new12*omega_dot_z + omega_z*(I_new00*omega_x) - omega_x*(I_new22*omega_z+I_new21*omega_y));
-    yawTorque = I_new22*omega_dot_z + I_new21*omega_dot_y + omega_x*(I_new11*omega_y+I_new12*omega_z) - omega_y*(I_new00*omega_x);
+    
 
     // rollTorque = I_new00*omega_dot_x;
     // pitchTorque = I_new11*omega_dot_y + I_new12*omega_dot_z;
@@ -285,20 +298,20 @@ void attitudeControllerCustomizedNew(
 
 
     
-    if(rollTorque > 0.1f)
-        rollTorque = 0.1f;
-    if(rollTorque < -0.1f)
-        rollTorque = -0.1f;
+    if(rollTorque > 0.2f)
+        rollTorque = 0.2f;
+    if(rollTorque < -0.2f)
+        rollTorque = -0.2f;
     // rollTorque = 0.0f;
-    if(pitchTorque > 0.1f)
-        pitchTorque = 0.1f;
-    if(pitchTorque < -0.1f)
-        pitchTorque = -0.1f;
+    if(pitchTorque > 0.2f)
+        pitchTorque = 0.2f;
+    if(pitchTorque < -0.2f)
+        pitchTorque = -0.2f;
     // pitchTorque = 0.0f;
-    if (yawTorque > 0.05f)
-        yawTorque = 0.05f;
-    if (yawTorque < -0.05f)
-        yawTorque = -0.05f;
+    if (yawTorque > 0.02f)//0.04 is the limit of the motors but can be set lower
+        yawTorque = 0.02f;
+    if (yawTorque < -0.02f)
+        yawTorque = -0.02f;
     // yawTorque = 0.0f;
     pre_mode = setpoint->mode.z;
 }
@@ -393,6 +406,7 @@ PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, Iyy, &Iyy)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, Izz, &Izz)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, armLength, &armLength)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, spring, &spring)
+PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, Ixx_frame, &Ixx_frame)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, Iyy_frame, &Iyy_frame)
 PARAM_ADD(PARAM_FLOAT | PARAM_PERSISTENT, Izz_frame, &Izz_frame)
 /**

@@ -247,7 +247,8 @@ typedef enum mode_e {
   modeAbs,
   modeVelocity,
   modeGround,
-  modeSky
+  modeSky,
+  modeLoco
 } stab_mode_t;
 
 typedef struct setpoint_s {
@@ -274,6 +275,7 @@ typedef struct setpoint_s {
   bool torqueControlMode;   // true if the Crazyflie is in torque control mode
   float frameroll;          // rad
   float yaw_fb;             // rad
+  float framerollrate;
   struct {
     stab_mode_t x;
     stab_mode_t y;

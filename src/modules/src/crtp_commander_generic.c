@@ -218,13 +218,15 @@ struct customizedPacket_s {
   float yawd;        // ...
   // float yawrated;  // deg/s
   float thrustd;      // rad
-  bool start; // true if the Crazyflie is in ground mode
+  // bool start; // true if the Crazyflie is in ground mode
   // bool reset;     // true if PID should be reset
-  bool groundmode; // true if the Crazyflie is in ground mode
+  uint8_t groundmode; // true if the Crazyflie is in ground mode
   // bool forcestop; // true if the Crazyflie is forced to stop
-  bool locmode; // true if the Crazyflie is in local mode
+  // bool locmode; // true if the Crazyflie is in local mode
   float frame_roll; // rad, the roll angle of the frame
   float yaw_fb; // rad, the yaw angle of the frame
+  float yaw_rate; // rad/s, the yaw rate of the frame 
+  // float frame_roll_rate; // rad/s, roll rate of the frame
 } __attribute__((packed));
 
 static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *data, size_t datalen)
@@ -238,20 +240,29 @@ static void customizedDecoder(setpoint_t *setpoint, uint8_t type, const void *da
   setpoint->attitude.yaw = values->yawd;
   // setpoint->attitudeRate.yaw = values->yawrated;
   setpoint->thrust = values->thrustd;
-  setpoint->start = values->start;
+  // setpoint->start = values->start;
   // setpoint->reset = values->reset;
   // setpoint->forcestop = values->forcestop;
-  setpoint->locmode = values->locmode;
+  // setpoint->locmode = values->locmode;
   setpoint->frameroll = values->frame_roll;
   setpoint->yaw_fb = values->yaw_fb;
-  if (values->groundmode){
+  if (values->groundmode == 1){
     setpoint->mode.z = modeGround;
-  } else {
+  } else if (values->groundmode == 3){
     setpoint->mode.z = modeSky;
+  } else if (values->groundmode == 2){
+    setpoint->mode.z = modeLoco;}
+  if (values->groundmode >0){
+    setpoint->start = true;
+  }else{
+    setpoint->start = false;
   }
+
   setpoint->torqueMode = false;
   setpoint->torqueControlMode = false;
   setpoint->testMode = false;
+  setpoint->attitudeRate.yaw = values->yaw_rate;
+  // setpoint->framerollrate = values->frame_roll_rate;
   // if (values->groundmode){
   //   setpoint->mode.z = modeGround;
   //   servoSetAngle(90);

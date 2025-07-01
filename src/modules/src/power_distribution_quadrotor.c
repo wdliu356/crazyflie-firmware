@@ -49,7 +49,7 @@
 static uint32_t idleThrust = DEFAULT_IDLE_THRUST;
 static float armLength = ARM_LENGTH; // m
 // static float thrustToTorque = 0.0067f; // for small quad
-static float thrustToTorque = 0.01012f; // for large quad
+static float thrustToTorque = 0.0093f; // for large quad
 
 // thrust = a * pwm^2 + b * pwm
 //    where PWM is normalized (range 0...1)
@@ -147,11 +147,17 @@ static void powerDistributionForceTorque(const control_t *control, motors_thrust
 
   for (int motorIndex = 0; motorIndex < STABILIZER_NR_OF_MOTORS; motorIndex++) {
     float motorForce = motorForces[motorIndex];
+    
     if (motorForce < 0.0f) {
       motorForce = 0.0f;
     }
-    float motor_pwm = (-pwmToThrustB + sqrtf(pwmToThrustB * pwmToThrustB + 4.0f * pwmToThrustA * motorForce)) / (2.0f * pwmToThrustA);
-    // motor_pwm = -3.95741f*motorForce*motorForce + 4.54896f*motorForce;
+    // float motor_pwm = (-pwmToThrustB + sqrtf(pwmToThrustB * pwmToThrustB + 4.0f * pwmToThrustA * motorForce)) / (2.0f * pwmToThrustA);
+
+    float motor_pwm = 0.09407f*motorForce*motorForce + 0.15942f*motorForce+0.06211f;
+    if (motor_pwm > 0.9f){
+      // Clap the motor pwm to 0.9 to prevent burning the motor
+      motor_pwm = 0.9f;
+    }
     motorThrustUncapped->list[motorIndex] = motor_pwm * UINT16_MAX;
   }
   // float maxthrust = 77031.0144f;
